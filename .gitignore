@@ -1,6 +1,10 @@
 .DS_Store
 .dart_tool/
-
+*pubspec.lock
+*Podfile.lock
+*.flutter-plugins-dependencies
+*.flutter-plugins
+*gradle/
 .packages
 .pub/
 .idea/
