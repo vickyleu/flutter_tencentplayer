@@ -42,7 +42,6 @@ dependencies {
     implementation(name: 'libsuperplayer', ext: 'aar')
     implementation 'com.tencent.liteav:LiteAVSDK_Player:7.2.8927'
 
-    compileOnly files('libs/flutter.jar')
     // 超级播放器弹幕集成的第三方库
     implementation 'com.github.ctiao:DanmakuFlameMaster:0.5.3'
 
