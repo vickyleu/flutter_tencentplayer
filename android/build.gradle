@@ -46,7 +46,6 @@ android {
 dependencies {
     implementation fileTree(include: ['*.jar'], dir: 'libs')
     implementation(name: 'LiteAVSDK_Player_7.4.9209', ext: 'aar')
-    implementation 'com.tencent.liteav:LiteAVSDK_Player:7.2.8927'
 
     // 超级播放器弹幕集成的第三方库
     implementation 'com.github.ctiao:DanmakuFlameMaster:0.5.3'
