@@ -8,7 +8,7 @@ buildscript {
     }
 
     dependencies {
-        classpath 'com.android.tools.build:gradle:3.4.2'
+        classpath 'com.android.tools.build:gradle:4.0.0'
     }
 }
 
@@ -34,15 +34,19 @@ android {
         disable 'InvalidPackage'
     }
 
+    sourceSets{
+        main {
+            jniLibs.srcDirs = ['libs']
+        }
+    }
+
 }
 
 
 dependencies {
-    implementation fileTree(include: ['*.jar'], dir: 'libs')
-    implementation(name: 'libsuperplayer', ext: 'aar')
-    implementation 'com.tencent.liteav:LiteAVSDK_Player:7.2.8927'
-
+    implementation(name: 'LiteAVSDK_Player_7.4.9211', ext: 'aar')
+    implementation(name: 'superplayerkit', ext: 'aar')
     // 超级播放器弹幕集成的第三方库
-    implementation 'com.github.ctiao:DanmakuFlameMaster:0.5.3'
+    implementation 'com.github.ctiao:DanmakuFlameMaster:0.9.25'
 
 }

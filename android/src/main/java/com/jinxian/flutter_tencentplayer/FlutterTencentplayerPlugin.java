@@ -160,7 +160,13 @@ public class FlutterTencentplayerPlugin implements MethodCallHandler {
             if (call.argument("auth") != null) {
                 authBuilder = new TXPlayerAuthBuilder();
                 Map authMap = (Map<String, Object>)call.argument("auth");
-                authBuilder.setAppId(((Number)authMap.get("appId")).intValue());
+                int appId=0;
+                try {
+                    String appIdStr=authMap.get("appId").toString();
+                    appId=Integer.parseInt(appIdStr);
+                }catch (Exception e){
+                }
+                authBuilder.setAppId(appId);
                 authBuilder.setFileId(authMap.get("fileId").toString());
                 mVodPlayer.startPlay(authBuilder);
             } else {
@@ -336,7 +342,13 @@ public class FlutterTencentplayerPlugin implements MethodCallHandler {
                 txVodDownloadMediaInfo = downloader.startDownloadUrl(urlOrFileId);
             } else {
                 TXPlayerAuthBuilder auth = new TXPlayerAuthBuilder();
-                auth.setAppId(((Number)call.argument("appId")).intValue());
+                int appId=0;
+                try {
+                    String appIdStr=call.argument("appId").toString();
+                    appId=Integer.parseInt(appIdStr);
+                }catch (Exception e){
+                }
+                auth.setAppId(appId);
                 auth.setFileId(urlOrFileId);
                 int quanlity = ((Number)call.argument("quanlity")).intValue();
                 String templateName = "HLS-标清-SD";
