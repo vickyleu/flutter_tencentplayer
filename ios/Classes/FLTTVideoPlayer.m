@@ -1,29 +1,29 @@
 //
-//  FLTVideoPlayer.m
+//  FLTTVideoPlayer.m
 //  flutter_plugin_demo3
 //
 //  Created by Wei on 2019/5/15.
 //
 
-#import "FLTVideoPlayer.h"
+#import "FLTTVideoPlayer.h"
 #import <libkern/OSAtomic.h>
 
 
 
-@implementation FLTVideoPlayer{
+@implementation FLTTVideoPlayer{
 //    CVPixelBufferRef finalPiexelBuffer;
 //    CVPixelBufferRef pixelBufferNowRef;
     CVPixelBufferRef volatile _latestPixelBuffer;
     CVPixelBufferRef _lastBuffer;
 }
 
-- (instancetype)initWithCall:(FlutterMethodCall *)call frameUpdater:(FLTFrameUpdater *)frameUpdater registry:(NSObject<FlutterTextureRegistry> *)registry messenger:(NSObject<FlutterBinaryMessenger>*)messenger{
+- (instancetype)initWithCall:(FlutterMethodCall *)call frameUpdater:(FLTTFrameUpdater *)frameUpdater registry:(NSObject<FlutterTextureRegistry> *)registry messenger:(NSObject<FlutterBinaryMessenger>*)messenger{
     self = [super init];
     _latestPixelBuffer = nil;
      _lastBuffer = nil;
-    // NSLog(@"FLTVideo  初始化播放器");
+    // NSLog(@"FLTTVideo  初始化播放器");
     _textureId = [registry registerTexture:self];
-    // NSLog(@"FLTVideo  _textureId %lld",_textureId);
+    // NSLog(@"FLTTVideo  _textureId %lld",_textureId);
     
     FlutterEventChannel* eventChannel = [FlutterEventChannel
                                          eventChannelWithName:[NSString stringWithFormat:@"flutter_tencentplayer/videoEvents%lld",_textureId]
@@ -279,7 +279,7 @@
 #pragma FlutterStreamHandler
 - (FlutterError* _Nullable)onCancelWithArguments:(id _Nullable)arguments {
     _eventSink = nil;
-    NSLog(@"FLTVideo停止通信");
+    NSLog(@"FLTTVideo停止通信");
     return nil;
 }
 
@@ -287,7 +287,7 @@
                                        eventSink:(nonnull FlutterEventSink)events {
     _eventSink = events;
     
-    NSLog(@"FLTVideo开启通信");
+    NSLog(@"FLTTVideo开启通信");
     //[self sendInitialized];
     return nil;
 }
@@ -297,7 +297,7 @@
     [self stopPlay];
     _txPlayer = nil;
     _frameUpdater = nil;
-     NSLog(@"FLTVideo  dispose");
+     NSLog(@"FLTTVideo  dispose");
     CVPixelBufferRef old = _latestPixelBuffer;
        while (!OSAtomicCompareAndSwapPtrBarrier(old, nil,
                                                 (void **)&_latestPixelBuffer)) {

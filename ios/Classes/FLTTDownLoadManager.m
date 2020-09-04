@@ -1,13 +1,13 @@
 //
-//  FLTDownLoadManager.m
+//  FLTTDownLoadManager.m
 //  flutter_tencentplayer
 //
 //  Created by wilson on 2019/8/16.
 //
 
-#import "FLTDownLoadManager.h"
+#import "FLTTDownLoadManager.h"
 
-@implementation FLTDownLoadManager
+@implementation FLTTDownLoadManager
 
 
 - (instancetype)initWithMethodCall:(FlutterMethodCall *)call result:(FlutterResult)result{
@@ -72,13 +72,13 @@
 - (FlutterError * _Nullable)onCancelWithArguments:(id _Nullable)arguments {
     _eventSink = nil;
     
-    NSLog(@"FLTDownLoadManager停止通信");
+    NSLog(@"FLTTDownLoadManager停止通信");
     return nil;
 }
 
 - (FlutterError * _Nullable)onListenWithArguments:(id _Nullable)arguments eventSink:(nonnull FlutterEventSink)events {
     _eventSink = events;
-      NSLog(@"FLTDownLoadManager设置全局通信");
+      NSLog(@"FLTTDownLoadManager设置全局通信");
     return nil;
 }
 

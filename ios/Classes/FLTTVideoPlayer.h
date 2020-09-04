@@ -1,5 +1,5 @@
 //
-//  FLTVideoPlayer.h
+//  FLTTVideoPlayer.h
 //  flutter_plugin_demo3
 //
 //  Created by Wei on 2019/5/15.
@@ -8,12 +8,12 @@
 #import <Foundation/Foundation.h>
 #import <AVFoundation/AVFoundation.h>
 #import <GLKit/GLKit.h>
-#import "FLTFrameUpdater.h"
+#import "FLTTFrameUpdater.h"
 #import "TXLiteAVSDK.h"
 #import <Flutter/Flutter.h>
 NS_ASSUME_NONNULL_BEGIN
 
-@interface FLTVideoPlayer : NSObject<FlutterTexture, FlutterStreamHandler,TXVideoCustomProcessDelegate,TXVodPlayListener>
+@interface FLTTVideoPlayer : NSObject<FlutterTexture, FlutterStreamHandler,TXVideoCustomProcessDelegate,TXVodPlayListener>
 @property(readonly,nonatomic) TXVodPlayer* txPlayer;
 @property(nonatomic) FlutterEventChannel* eventChannel;
 
@@ -26,10 +26,10 @@ NS_ASSUME_NONNULL_BEGIN
  * 是否循环播放
  */
 @property (nonatomic, assign) BOOL loop;
-@property(nonatomic)FLTFrameUpdater* frameUpdater;
+@property(nonatomic)FLTTFrameUpdater* frameUpdater;
 
 - (instancetype)initWithCall:(FlutterMethodCall*)call
-                frameUpdater:(FLTFrameUpdater*)frameUpdater
+                frameUpdater:(FLTTFrameUpdater*)frameUpdater
                     registry:(NSObject<FlutterTextureRegistry>*)registry
                    messenger:(NSObject<FlutterBinaryMessenger>*)messenger;
 - (void)dispose;

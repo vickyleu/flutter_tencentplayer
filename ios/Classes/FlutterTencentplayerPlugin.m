@@ -1,8 +1,8 @@
 #import "FlutterTencentplayerPlugin.h"
 
-#import "FLTVideoPlayer.h"
-#import "FLTFrameUpdater.h"
-#import "FLTDownLoadManager.h"
+#import "FLTTVideoPlayer.h"
+#import "FLTTFrameUpdater.h"
+#import "FLTTDownLoadManager.h"
 
 @interface FlutterTencentplayerPlugin ()
 
@@ -21,7 +21,7 @@
 @implementation FlutterTencentplayerPlugin
 
 NSObject<FlutterPluginRegistrar>* mRegistrar;
-FLTVideoPlayer* player ;
+FLTTVideoPlayer* player ;
 
 - (instancetype)initWithRegistrar:(NSObject<FlutterPluginRegistrar>*)registrar {
     self = [super init];
@@ -31,7 +31,7 @@ FLTVideoPlayer* player ;
     _registrar = registrar;
    // _players = [NSMutableDictionary dictionaryWithCapacity:1];
     _downLoads = [NSMutableDictionary dictionaryWithCapacity:1];
-     NSLog(@"FLTVideo  initWithRegistrar");
+     NSLog(@"FLTTVideo  initWithRegistrar");
     return self;
 }
 
@@ -48,16 +48,16 @@ FLTVideoPlayer* player ;
 }
 
 - (void)handleMethodCall:(FlutterMethodCall*)call result:(FlutterResult)result {
-     //NSLog(@"FLTVideo  call name   %@",call.method);
+     //NSLog(@"FLTTVideo  call name   %@",call.method);
     if ([@"init" isEqualToString:call.method]) {
         [self disposeAllPlayers];
         result(nil);
     }else if([@"create" isEqualToString:call.method]){
-        NSLog(@"FLTVideo  create");
+        NSLog(@"FLTTVideo  create");
         [self disposeAllPlayers];
-        FLTFrameUpdater* frameUpdater = [[FLTFrameUpdater alloc] initWithRegistry:_registry];
-//        FLTVideoPlayer*
-        player= [[FLTVideoPlayer alloc] initWithCall:call frameUpdater:frameUpdater registry:_registry messenger:_messenger];
+        FLTTFrameUpdater* frameUpdater = [[FLTTFrameUpdater alloc] initWithRegistry:_registry];
+//        FLTTVideoPlayer*
+        player= [[FLTTVideoPlayer alloc] initWithCall:call frameUpdater:frameUpdater registry:_registry messenger:_messenger];
         if (player) {
             [self onPlayerSetup:player frameUpdater:frameUpdater result:result];
         }
@@ -73,7 +73,7 @@ FLTVideoPlayer* player ;
         FlutterEventChannel* eventChannel = [FlutterEventChannel
                                              eventChannelWithName:channelUrl
                                              binaryMessenger:_messenger];
-       FLTDownLoadManager* downLoadManager = [[FLTDownLoadManager alloc] initWithMethodCall:call result:result];
+       FLTTDownLoadManager* downLoadManager = [[FLTTDownLoadManager alloc] initWithMethodCall:call result:result];
        [eventChannel setStreamHandler:downLoadManager];
        downLoadManager.eventChannel =eventChannel;
        [downLoadManager downLoad];
@@ -87,7 +87,7 @@ FLTVideoPlayer* player ;
         NSDictionary* argsMap = call.arguments;
         NSString* urlOrFileId = argsMap[@"urlOrFileId"];
         NSLog(@"下载相关    stopDownload  %@", urlOrFileId);
-        FLTDownLoadManager* downLoadManager =   _downLoads[urlOrFileId];
+        FLTTDownLoadManager* downLoadManager =   _downLoads[urlOrFileId];
         if(downLoadManager!=nil){
            [downLoadManager stopDownLoad];
         }else{
@@ -110,7 +110,7 @@ FLTVideoPlayer* player ;
         return;
     }
     int64_t textureId = ((NSNumber*)argsMap[@"textureId"]).unsignedIntegerValue;
-//    FLTVideoPlayer* player = _players[@(textureId)];
+//    FLTTVideoPlayer* player = _players[@(textureId)];
 
     if([@"play" isEqualToString:call.method]){
         [player resume];
@@ -138,7 +138,7 @@ FLTVideoPlayer* player ;
         [player setBitrateIndex:index];
         result(nil);
     }else if([@"dispose" isEqualToString:call.method]){
-         NSLog(@"FLTVideo  dispose   ----   ");
+         NSLog(@"FLTTVideo  dispose   ----   ");
         [_registry unregisterTexture:textureId];
        // [_players removeObjectForKey:@(textureId)];
         //_players= nil;
@@ -150,8 +150,8 @@ FLTVideoPlayer* player ;
     
 }
 
-- (void)onPlayerSetup:(FLTVideoPlayer*)player
-         frameUpdater:(FLTFrameUpdater*)frameUpdater
+- (void)onPlayerSetup:(FLTTVideoPlayer*)player
+         frameUpdater:(FLTTFrameUpdater*)frameUpdater
                result:(FlutterResult)result {
 //    _players[@(player.textureId)] = player;
     result(@{@"textureId" : @(player.textureId)});
@@ -159,7 +159,7 @@ FLTVideoPlayer* player ;
 }
 
 -(void) disposeAllPlayers{
-     NSLog(@"FLTVideo 初始化播放器状态----------");
+     NSLog(@"FLTTVideo 初始化播放器状态----------");
     // Allow audio playback when the Ring/Silent switch is set to silent
     [[AVAudioSession sharedInstance] setCategory:AVAudioSessionCategoryPlayback error:nil];
     if(player){

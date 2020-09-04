@@ -1,5 +1,5 @@
 //
-//  FLTDownLoadManager.h
+//  FLTTDownLoadManager.h
 //  flutter_tencentplayer
 //
 //  Created by wilson on 2019/8/16.
@@ -10,7 +10,7 @@
 #import "TXLiteAVSDK.h"
 NS_ASSUME_NONNULL_BEGIN
 
-@interface FLTDownLoadManager : NSObject<FlutterStreamHandler,TXVodDownloadDelegate>
+@interface FLTTDownLoadManager : NSObject<FlutterStreamHandler,TXVodDownloadDelegate>
 
 
 @property(nonatomic) FlutterEventSink eventSink;
