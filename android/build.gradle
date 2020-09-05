@@ -80,9 +80,9 @@ dependencies {
 
 
 
-
-apply from: "$flutterRoot/packages/flutter_tools/gradle/flutter.gradle"
-
-flutter {
-    source '../'
-}
+//
+//apply from: "$flutterRoot/packages/flutter_tools/gradle/flutter.gradle"
+//
+//flutter {
+//    source '../'
+//}
