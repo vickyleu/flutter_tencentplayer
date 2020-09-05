@@ -1,4 +1,4 @@
-package com.jinxian.flutter_tencentplayer;
+package android.app.src.main.java.com.jinxian.flutter_tencentplayer;
 
 import android.app.Activity;
 import android.content.Context;
