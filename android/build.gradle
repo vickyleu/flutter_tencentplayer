@@ -1,6 +1,32 @@
 group 'com.jinxian.flutter_tencentplayer'
 version '1.0-SNAPSHOT'
 
+
+def localProperties = new Properties()
+def localPropertiesFile = rootProject.file('local.properties')
+if (localPropertiesFile.exists()) {
+    localPropertiesFile.withReader('UTF-8') { reader ->
+        localProperties.load(reader)
+    }
+}
+
+def flutterRoot = localProperties.getProperty('flutter.sdk')
+if (flutterRoot == null) {
+    throw new Exception("Flutter SDK not found. Define location with flutter.sdk in the local.properties file.")
+}
+
+def flutterVersionCode = localProperties.getProperty('flutter.versionCode')
+if (flutterVersionCode == null) {
+    flutterVersionCode = '1'
+}
+
+def flutterVersionName = localProperties.getProperty('flutter.versionName')
+if (flutterVersionName == null) {
+    flutterVersionName = '1.0'
+}
+
+
+
 buildscript {
     repositories {
         google()
@@ -8,7 +34,7 @@ buildscript {
     }
 
     dependencies {
-        classpath 'com.android.tools.build:gradle:4.0.0'
+        classpath 'com.android.tools.build:gradle:4.0.1'
     }
 }
 
@@ -36,6 +62,7 @@ android {
 
     sourceSets{
         main {
+//            java.srcDirs = ['src/main/java']
             jniLibs.srcDirs = ['libs']
         }
     }
@@ -49,4 +76,13 @@ dependencies {
     // 超级播放器弹幕集成的第三方库
     implementation 'com.github.ctiao:DanmakuFlameMaster:0.9.25'
 
+}
+
+
+
+
+apply from: "$flutterRoot/packages/flutter_tools/gradle/flutter.gradle"
+
+flutter {
+    source '../'
 }
