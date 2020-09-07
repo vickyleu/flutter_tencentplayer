@@ -1,4 +1,4 @@
-package android.src.main.java.com.jinxian.flutter_tencentplayer;
+package com.jinxian.flutter_tencentplayer;
 
 import java.util.ArrayList;
 
