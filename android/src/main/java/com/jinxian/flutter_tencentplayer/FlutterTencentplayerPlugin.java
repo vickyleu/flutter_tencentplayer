@@ -1,5 +1,7 @@
-package com.jinxian.flutter_tencentplayer;
+package android.src.main.java.com.jinxian.flutter_tencentplayer;
 
+import android.app.Activity;
+import android.content.Context;
 import android.content.res.AssetManager;
 import android.os.Bundle;
 import android.util.Base64;
@@ -7,14 +9,17 @@ import android.util.LongSparseArray;
 import android.view.OrientationEventListener;
 import android.view.Surface;
 
+import androidx.annotation.NonNull;
+
+import io.flutter.FlutterInjector;
+import io.flutter.embedding.engine.plugins.FlutterPlugin;
+import io.flutter.embedding.engine.plugins.activity.ActivityAware;
+import io.flutter.embedding.engine.plugins.activity.ActivityPluginBinding;
+import io.flutter.plugin.common.BinaryMessenger;
+import io.flutter.plugin.common.EventChannel;
 import io.flutter.plugin.common.MethodCall;
 import io.flutter.plugin.common.MethodChannel;
-import io.flutter.plugin.common.MethodChannel.MethodCallHandler;
-import io.flutter.plugin.common.MethodChannel.Result;
-import io.flutter.plugin.common.PluginRegistry.Registrar;
-import io.flutter.plugin.common.EventChannel;
 import io.flutter.plugin.common.PluginRegistry;
-import io.flutter.view.FlutterNativeView;
 import io.flutter.view.TextureRegistry;
 
 
@@ -32,6 +37,7 @@ import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
+import java.lang.ref.WeakReference;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -39,7 +45,182 @@ import java.util.Map;
 /**
  * FlutterTencentplayerPlugin
  */
-public class FlutterTencentplayerPlugin implements MethodCallHandler {
+public class FlutterTencentplayerPlugin implements FlutterPlugin,MethodChannel.MethodCallHandler, ActivityAware {
+    private static final String CHANNEL_NAME = "flutter_tencentplayer";
+    private  TextureRegistry mTextureRegistry;
+    private  MethodChannel methodChannel;
+    private BinaryMessenger mBinaryMessenger;
+    private WeakReference<Activity> currentActivity;
+
+    /** Plugin registration. */
+    public static void registerWith(PluginRegistry.Registrar registrar) {
+        FlutterTencentplayerPlugin flutterLivePlugin = new FlutterTencentplayerPlugin();
+        flutterLivePlugin.setupChannel(registrar.messenger(),registrar.textures());
+        registrar.addViewDestroyListener(flutterNativeView -> {
+                    flutterLivePlugin.onDestroy();
+                    return false;
+                }
+        );
+    }
+    @Override
+    public void onAttachedToActivity(@NonNull ActivityPluginBinding binding) {
+        currentActivity = new WeakReference<>(binding.getActivity());
+    }
+
+    @Override
+    public void onDetachedFromActivityForConfigChanges() {
+        onDetachedFromActivity();
+    }
+
+    @Override
+    public void onReattachedToActivityForConfigChanges(@NonNull ActivityPluginBinding binding) {
+        onAttachedToActivity(binding);
+    }
+
+    @Override
+    public void onDetachedFromActivity() {
+        currentActivity = null;
+    }
+
+    @Override
+    public void onAttachedToEngine(@NonNull FlutterPluginBinding binding) {
+        setupChannel(binding.getBinaryMessenger(),binding.getTextureRegistry());
+    }
+    @Override
+    public void onDetachedFromEngine(@NonNull FlutterPluginBinding binding) {
+        teardownChannel();
+    }
+
+    private void setupChannel(BinaryMessenger binaryMessenger, TextureRegistry textureRegistry) {
+        mTextureRegistry=textureRegistry;
+        mBinaryMessenger=binaryMessenger;
+        methodChannel = new MethodChannel(binaryMessenger, CHANNEL_NAME);
+        methodChannel.setMethodCallHandler(this);
+        videoPlayers = new LongSparseArray<>();
+        downloadManagerMap = new HashMap<>();
+
+    }
+
+    private void teardownChannel() {
+        methodChannel.setMethodCallHandler(null);
+        methodChannel = null;
+        mTextureRegistry=null;
+        mBinaryMessenger=null;
+        if(videoPlayers!=null){
+            videoPlayers.clear();
+        }
+        if(downloadManagerMap!=null){
+             downloadManagerMap.clear();
+        }
+        videoPlayers=null;
+        downloadManagerMap=null;
+    }
+
+
+    private  LongSparseArray<TencentPlayer> videoPlayers;
+    private  HashMap<String, TencentDownload> downloadManagerMap;
+
+
+
+
+    @Override
+    public void onMethodCall(MethodCall call, MethodChannel.Result result) {
+        if(mBinaryMessenger==null||mTextureRegistry==null||currentActivity==null||currentActivity.get()==null){
+            return;
+        }
+        TextureRegistry textures = mTextureRegistry;
+        if ("getPlatformVersion".equals(call.method)) {
+            result.success("Android " + android.os.Build.VERSION.RELEASE);
+        }
+
+        switch (call.method) {
+            case "init":
+                disposeAllPlayers();
+                break;
+            case "create":
+                TextureRegistry.SurfaceTextureEntry handle = textures.createSurfaceTexture();
+                EventChannel eventChannel = new EventChannel(mBinaryMessenger, "flutter_tencentplayer/videoEvents" + handle.id());
+                TencentPlayer player = new TencentPlayer(currentActivity.get(),eventChannel, handle, call, result);
+                videoPlayers.put(handle.id(), player);
+                break;
+            case "download":
+                String urlOrFileId = call.argument("urlOrFileId").toString();
+                EventChannel downloadEventChannel = new EventChannel(mBinaryMessenger, "flutter_tencentplayer/downloadEvents" + urlOrFileId);
+                TencentDownload tencentDownload = new TencentDownload(downloadEventChannel, call, result);
+
+                downloadManagerMap.put(urlOrFileId, tencentDownload);
+                break;
+            case "stopDownload":
+                downloadManagerMap.get(call.argument("urlOrFileId").toString()).stopDownload();
+                result.success(null);
+                break;
+            default:
+                long textureId = ((Number) call.argument("textureId")).longValue();
+                TencentPlayer tencentPlayer = videoPlayers.get(textureId);
+                if (tencentPlayer == null) {
+                    result.error(
+                            "Unknown textureId",
+                            "No video player associated with texture id " + textureId,
+                            null);
+                    return;
+                }
+                onMethodCall(call, result, textureId, tencentPlayer);
+                break;
+
+        }
+    }
+
+    // flutter 发往android的命令
+    private void onMethodCall(MethodCall call, MethodChannel.Result result, long textureId, TencentPlayer player) {
+        switch (call.method) {
+            case "play":
+                player.play();
+                result.success(null);
+                break;
+            case "pause":
+                player.pause();
+                result.success(null);
+                break;
+            case "seekTo":
+                int location = ((Number) call.argument("location")).intValue();
+                player.seekTo(location);
+                result.success(null);
+                break;
+            case "setRate":
+                float rate = ((Number) call.argument("rate")).floatValue();
+                player.setRate(rate);
+                result.success(null);
+                break;
+            case "setBitrateIndex":
+                int bitrateIndex = ((Number) call.argument("index")).intValue();
+                player.setBitrateIndex(bitrateIndex);
+                result.success(null);
+                break;
+            case "dispose":
+                player.dispose();
+                videoPlayers.remove(textureId);
+                result.success(null);
+                break;
+            default:
+                result.notImplemented();
+                break;
+        }
+
+    }
+
+
+    private void disposeAllPlayers() {
+        for (int i = 0; i < videoPlayers.size(); i++) {
+            videoPlayers.valueAt(i).dispose();
+        }
+        videoPlayers.clear();
+    }
+
+    private void onDestroy() {
+        disposeAllPlayers();
+    }
+
+
 
     ///////////////////// TencentPlayer 开始////////////////////
 
@@ -54,24 +235,23 @@ public class FlutterTencentplayerPlugin implements MethodCallHandler {
         private TencentQueuingEventSink eventSink = new TencentQueuingEventSink();
 
         private final EventChannel eventChannel;
-
-        private final Registrar mRegistrar;
+        private final Context mRegistrarContext;
 
         private OrientationEventListener orientationEventListener;
 
 
         TencentPlayer(
-                Registrar mRegistrar,
+                Context mRegistrarContext,
                 EventChannel eventChannel,
                 TextureRegistry.SurfaceTextureEntry textureEntry,
                 MethodCall call,
-                Result result) {
+                MethodChannel.Result result) {
+            this.mRegistrarContext = mRegistrarContext;
             this.eventChannel = eventChannel;
             this.textureEntry = textureEntry;
-            this.mRegistrar = mRegistrar;
 
 
-            mVodPlayer = new TXVodPlayer(mRegistrar.context());
+            mVodPlayer = new TXVodPlayer(mRegistrarContext);
 
             setPlayConfig(call);
 
@@ -86,7 +266,7 @@ public class FlutterTencentplayerPlugin implements MethodCallHandler {
         }
 
         private void setOrientationEventListener() {
-            orientationEventListener = new OrientationEventListener(mRegistrar.context()) {
+            orientationEventListener = new OrientationEventListener(mRegistrarContext) {
                 @Override
                 public void onOrientationChanged(int orientation) {
                     if (orientation == OrientationEventListener.ORIENTATION_UNKNOWN) {
@@ -130,7 +310,7 @@ public class FlutterTencentplayerPlugin implements MethodCallHandler {
 
         }
 
-        private void setFlutterBridge(EventChannel eventChannel, TextureRegistry.SurfaceTextureEntry textureEntry, Result result) {
+        private void setFlutterBridge(EventChannel eventChannel, TextureRegistry.SurfaceTextureEntry textureEntry, MethodChannel.Result result) {
             // 注册android向flutter发事件
             eventChannel.setStreamHandler(
                     new EventChannel.StreamHandler() {
@@ -159,24 +339,26 @@ public class FlutterTencentplayerPlugin implements MethodCallHandler {
             // network FileId播放
             if (call.argument("auth") != null) {
                 authBuilder = new TXPlayerAuthBuilder();
-                Map authMap = (Map<String, Object>)call.argument("auth");
+                Map<String, Object> authMap = call.argument("auth");
                 int appId=0;
-                try {
-                    String appIdStr=authMap.get("appId").toString();
-                    appId=Integer.parseInt(appIdStr);
-                }catch (Exception e){
+                if(authMap!=null){
+                    try {
+                        String appIdStr=authMap.get("appId").toString();
+                        appId=Integer.parseInt(appIdStr);
+                    }catch (Exception ignore){
+                    }
+                    authBuilder.setAppId(appId);
+                    authBuilder.setFileId(authMap.get("fileId").toString());
                 }
-                authBuilder.setAppId(appId);
-                authBuilder.setFileId(authMap.get("fileId").toString());
                 mVodPlayer.startPlay(authBuilder);
             } else {
                 // asset播放
                 if (call.argument("asset") != null) {
-                    String assetLookupKey = mRegistrar.lookupKeyForAsset(call.argument("asset").toString());
-                    AssetManager assetManager = mRegistrar.context().getAssets();
+                    String assetLookupKey = FlutterInjector.instance().flutterLoader().getLookupKeyForAsset(call.argument("asset").toString());
+                    AssetManager assetManager = mRegistrarContext.getAssets();
                     try {
                         InputStream inputStream = assetManager.open(assetLookupKey);
-                        String cacheDir = mRegistrar.context().getCacheDir().getAbsoluteFile().getPath();
+                        String cacheDir = mRegistrarContext.getCacheDir().getAbsoluteFile().getPath();
                         String fileName = Base64.encodeToString(assetLookupKey.getBytes(), Base64.DEFAULT);
                         File file = new File(cacheDir, fileName + ".mp4");
                         FileOutputStream fileOutputStream = new FileOutputStream(file);
@@ -306,10 +488,6 @@ public class FlutterTencentplayerPlugin implements MethodCallHandler {
     class TencentDownload implements ITXVodDownloadListener {
         private TencentQueuingEventSink eventSink = new TencentQueuingEventSink();
 
-        private final EventChannel eventChannel;
-
-        private final Registrar mRegistrar;
-
         private String fileId;
 
         private TXVodDownloadManager downloader;
@@ -325,14 +503,9 @@ public class FlutterTencentplayerPlugin implements MethodCallHandler {
 
 
         TencentDownload(
-                Registrar mRegistrar,
                 EventChannel eventChannel,
                 MethodCall call,
-                Result result) {
-            this.eventChannel = eventChannel;
-            this.mRegistrar = mRegistrar;
-
-
+                MethodChannel.Result result) {
             downloader = TXVodDownloadManager.getInstance();
             downloader.setListener(this);
             downloader.setDownloadPath(call.argument("savePath").toString());
@@ -431,134 +604,4 @@ public class FlutterTencentplayerPlugin implements MethodCallHandler {
 
     }
     ////////////////////  TencentDownload 结束/////////////////
-    private final Registrar registrar;
-    private final LongSparseArray<TencentPlayer> videoPlayers;
-    private final HashMap<String, TencentDownload> downloadManagerMap;
-
-    private FlutterTencentplayerPlugin(Registrar registrar) {
-        this.registrar = registrar;
-        this.videoPlayers = new LongSparseArray<>();
-        this.downloadManagerMap = new HashMap<>();
-
-
-
-    }
-
-
-    /**
-     * Plugin registration.
-     */
-    public static void registerWith(Registrar registrar) {
-        final MethodChannel channel = new MethodChannel(registrar.messenger(), "flutter_tencentplayer");
-        final FlutterTencentplayerPlugin plugin = new FlutterTencentplayerPlugin(registrar);
-
-        channel.setMethodCallHandler(plugin);
-
-        registrar.addViewDestroyListener(
-                new PluginRegistry.ViewDestroyListener() {
-                    @Override
-                    public boolean onViewDestroy(FlutterNativeView flutterNativeView) {
-                        plugin.onDestroy();
-                        return false;
-                    }
-                }
-        );
-    }
-
-    @Override
-    public void onMethodCall(MethodCall call, Result result) {
-        TextureRegistry textures = registrar.textures();
-        if (call.method.equals("getPlatformVersion")) {
-            result.success("Android " + android.os.Build.VERSION.RELEASE);
-        }
-
-        switch (call.method) {
-            case "init":
-                disposeAllPlayers();
-                break;
-            case "create":
-                TextureRegistry.SurfaceTextureEntry handle = textures.createSurfaceTexture();
-
-                EventChannel eventChannel = new EventChannel(registrar.messenger(), "flutter_tencentplayer/videoEvents" + handle.id());
-
-
-                TencentPlayer player = new TencentPlayer(registrar, eventChannel, handle, call, result);
-                videoPlayers.put(handle.id(), player);
-                break;
-            case "download":
-                String urlOrFileId = call.argument("urlOrFileId").toString();
-                EventChannel downloadEventChannel = new EventChannel(registrar.messenger(), "flutter_tencentplayer/downloadEvents" + urlOrFileId);
-                TencentDownload tencentDownload = new TencentDownload(registrar, downloadEventChannel, call, result);
-
-                downloadManagerMap.put(urlOrFileId, tencentDownload);
-                break;
-            case "stopDownload":
-                downloadManagerMap.get(call.argument("urlOrFileId").toString()).stopDownload();
-                result.success(null);
-                break;
-            default:
-                long textureId = ((Number) call.argument("textureId")).longValue();
-                TencentPlayer tencentPlayer = videoPlayers.get(textureId);
-                if (tencentPlayer == null) {
-                    result.error(
-                            "Unknown textureId",
-                            "No video player associated with texture id " + textureId,
-                            null);
-                    return;
-                }
-                onMethodCall(call, result, textureId, tencentPlayer);
-                break;
-
-        }
-    }
-
-    // flutter 发往android的命令
-    private void onMethodCall(MethodCall call, Result result, long textureId, TencentPlayer player) {
-        switch (call.method) {
-            case "play":
-                player.play();
-                result.success(null);
-                break;
-            case "pause":
-                player.pause();
-                result.success(null);
-                break;
-            case "seekTo":
-                int location = ((Number) call.argument("location")).intValue();
-                player.seekTo(location);
-                result.success(null);
-                break;
-            case "setRate":
-                float rate = ((Number) call.argument("rate")).floatValue();
-                player.setRate(rate);
-                result.success(null);
-                break;
-            case "setBitrateIndex":
-                int bitrateIndex = ((Number) call.argument("index")).intValue();
-                player.setBitrateIndex(bitrateIndex);
-                result.success(null);
-                break;
-            case "dispose":
-                player.dispose();
-                videoPlayers.remove(textureId);
-                result.success(null);
-                break;
-            default:
-                result.notImplemented();
-                break;
-        }
-
-    }
-
-
-    private void disposeAllPlayers() {
-        for (int i = 0; i < videoPlayers.size(); i++) {
-            videoPlayers.valueAt(i).dispose();
-        }
-        videoPlayers.clear();
-    }
-
-    private void onDestroy() {
-        disposeAllPlayers();
-    }
 }
