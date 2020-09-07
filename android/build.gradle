@@ -75,8 +75,9 @@ android {
 
 
 dependencies {
-    implementation(name: 'LiteAVSDK_Player_7.4.9211', ext: 'aar')
-    implementation(name: 'superplayerkit', ext: 'aar')
+//    implementation(name: 'LiteAVSDK_Player_7.4.9211', ext: 'aar')
+    implementation 'com.tencent.liteav:LiteAVSDK_Professional:7.6.9376'
+//    implementation(name: 'superplayerkit', ext: 'aar')
     // 超级播放器弹幕集成的第三方库
     implementation 'com.github.ctiao:DanmakuFlameMaster:0.9.25'
 
@@ -84,7 +85,7 @@ dependencies {
 
 
 
-//
+
 //apply from: "$flutterRoot/packages/flutter_tools/gradle/flutter.gradle"
 //
 //flutter {
