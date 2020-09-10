@@ -11,7 +11,8 @@ import android.view.Surface;
 
 import androidx.annotation.NonNull;
 
-import io.flutter.FlutterInjector;
+
+import io.flutter.embedding.engine.loader.FlutterLoader;
 import io.flutter.embedding.engine.plugins.FlutterPlugin;
 import io.flutter.embedding.engine.plugins.activity.ActivityAware;
 import io.flutter.embedding.engine.plugins.activity.ActivityPluginBinding;
@@ -354,7 +355,7 @@ public class FlutterTencentplayerPlugin implements FlutterPlugin,MethodChannel.M
             } else {
                 // asset播放
                 if (call.argument("asset") != null) {
-                    String assetLookupKey = FlutterInjector.instance().flutterLoader().getLookupKeyForAsset(call.argument("asset").toString());
+                    String assetLookupKey = FlutterLoader.getInstance().getLookupKeyForAsset(call.argument("asset").toString());
                     AssetManager assetManager = mRegistrarContext.getAssets();
                     try {
                         InputStream inputStream = assetManager.open(assetLookupKey);
