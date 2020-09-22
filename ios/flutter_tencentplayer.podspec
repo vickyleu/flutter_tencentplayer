@@ -16,7 +16,8 @@ A new Flutter plugin.
   s.public_header_files = 'Classes/**/*.h'
   s.dependency 'Flutter'
 
-  s.dependency 'TXLiteAVSDK_TRTC'
+  s.dependency  'SuperPlayer'
+  #s.dependency 'TXLiteAVSDK_TRTC'
 
   s.user_target_xcconfig = { 'CLANG_ALLOW_NON_MODULAR_INCLUDES_IN_FRAMEWORK_MODULES' => 'YES' }
   s.static_framework = true
